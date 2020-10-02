@@ -1,4 +1,5 @@
-//라즈베리파이 Python 코드
+#라즈베리파이 Python 코드
+#블루투스 통신을 위한 전역변수 선언
 passwordbool = False
 btSerial = serial.Serial("/dev/rfcomm0", baudrate=115200)
 blueSerial100 = '0'
@@ -16,6 +17,8 @@ blueSerial100 = '0'
         self.detector = snowboydecoder.HotwordDetector(models, sensitivity=self.sensitivity)
         self.t1 = Thread(target=self.start_detector)
         self.t2 = Thread(target=self.pushbutton)
+        
+        #아두이노신호를 받아오는 쓰레드추가
         self.tttt = Thread(target=self.blue)
 
 
@@ -38,26 +41,25 @@ blueSerial100 = '0'
             self.tttt.start()
 
 
+    #아두이노로 부터 습도, 가스, 움직임감지 신호를 받아서 처리하는 함수
     def blue(self):
         global blueSerial100
         global btSerial
         while True:
             blueSerial100 = btSerial.readline()
 
-            if blueSerial100 == 'PANON1':
+            if blueSerial100 == 'PANON1': #아두이노로부터 pan을 작동시키라는 신호를 받음
                  say("Pan on")
-            elif blueSerial100 == 'PANOFF1':
+            elif blueSerial100 == 'PANOFF1': #아두이노로부터 pan을 정지시키라는 신호를 받음
                  say("Pan off")
-            elif blueSerial100 == 'GAS':
+            elif blueSerial100 == 'GAS': #아두이노로부터 GAS를 감지했다는 신호를 받음
                  say("Gas is detected")
-            elif blueSerial100 == 'PASSWORD':
+            elif blueSerial100 == 'PASSWORD': #아두이노로부터 움직임을 감지했다는 신호를 받음
                  event.type = EventType.ON_CONVERSATION_TURN_STARTED
                  global passwordbool
                  passwordbool = True
                  say("Please say password")
-
-raspberrypi request
-            elif blueSerial100 >= '10000' and blueSerial100 <= '10100':
+            elif blueSerial100 >= '10000' and blueSerial100 <= '10100': #아두이노로부터 습도가 몇인지 받음
                  say(btSerial.readline() - '10000')
 
 
@@ -139,6 +141,9 @@ raspberrypi request
                 else:
                     print(WARNING_NOT_REGISTERED)
 
+            # Google Assistant API에 "pan off", "humidity" event 추가
+            # pan off event를 받으면, pan off라고 응답
+            # humidity event를 받으면, 현재 습도를 응답
             for event in events:
                 self.process_event(event)
                 usrcmd=event.args
